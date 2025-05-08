@@ -58,7 +58,7 @@ class MeshDrawer {
         
         // Get attribute locations
         this.vertPos = gl.getAttribLocation(this.program, 'pos');
-        this.texCoords = gl.getAttribLocation(this.program, 'txc');  // Changed from 'texCoord'
+        this.texCoords = gl.getAttribLocation(this.program, 'txc'); 
         
         // Create buffers
         this.vertPosBuffer = gl.createBuffer();
@@ -66,8 +66,8 @@ class MeshDrawer {
         
         // Get uniform locations,they must match the names in the shader code
         this.mvpUniformLoc = gl.getUniformLocation(this.program, "mvp");
-        this.swapYZUniformLoc = gl.getUniformLocation(this.program, "u_swapYZ");  // Changed from 'swapYZ'
-        this.showTextureUniformLoc = gl.getUniformLocation(this.program, "u_showTex");  // Changed from 'showTexture'
+        this.swapYZUniformLoc = gl.getUniformLocation(this.program, "u_swapYZ"); 
+        this.showTextureUniformLoc = gl.getUniformLocation(this.program, "u_showTex");
         this.samplerUniformLoc = gl.getUniformLocation(this.program, "tex");
         
         // Initialize state
