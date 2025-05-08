@@ -109,7 +109,7 @@ class MeshDrawer {
 
     swapYZ(swap) {
         gl.useProgram(this.program);
-        gl.uniform1i(this.swapYZUniformLoc, swap ? 1 : 0);  // Use 1/0 instead of true/false
+        gl.uniform1i(this.swapYZUniformLoc, swap ? 1 : 0);
     }
     
 	// This method is called to draw the triangular mesh.
