@@ -171,9 +171,7 @@ vec4 RayTracer( Ray ray )
 				// TO-DO: Update the loop variables for tracing the next reflection ray
 				k_s *= h.mtl.k_s;	// update the reflection coefficient
 				hit = h;	// update the hit info
-				//r.pos = h.position + h.normal * EPSILON;	// move the ray a bit  ----gonna comment those, giving problems
-				//r.dir = reflect( ray.dir, hit.normal );	// reflect the ray
-				//r = h;	// and update the ray,----- this was giving error, i think i can0t do this implicit cast -----
+			
 
 			} else {
 				// The refleciton ray did not intersect with anything,
