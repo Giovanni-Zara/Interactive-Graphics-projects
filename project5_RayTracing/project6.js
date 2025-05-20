@@ -112,7 +112,7 @@ bool IntersectRay( inout HitInfo hit, Ray ray )
 		vec3 dist = o - oc;	//distance from the ray to the center of the sphere
 		float b = 2.0 * dot( ray.dir, dist );
 		float c = dot( dist, dist ) - r * r;	
-		float discriminant = b * b -  (4.0 * a * c);	//simplified equation formula, removed the 2b and 4ac
+		float discriminant = b * b -  (4.0 * a * c);	//2nd poly equation
 
 		//if the discriminant is negative, no intersection
 		if (discriminant < 0.0) {
