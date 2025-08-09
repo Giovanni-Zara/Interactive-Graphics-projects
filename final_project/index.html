@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Castaway Pirate</title>
+    <link rel="icon" href="\images\pirate-hook.ico" type="image/x-icon">
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Pirata+One&family=Cinzel:wght@400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Main Menu -->
+    <div id="mainMenu">
+        <div class="menu-background"></div>
+        <div class="menu-content">
+            <div class="game-title">
+                <h1 class="title-main">CASTAWAY</h1>
+                <h2 class="title-sub">PIRATE</h2>
+                <div class="title-decoration">⚓ ☠️ ⚓</div>
+            </div>
+            
+            <div class="menu-options">
+                <div class="settings-panel">
+                    <label class="shadow-toggle">
+                        <input type="checkbox" id="shadowToggle" checked>
+                        <span class="checkmark"></span>
+                        Enable Shadows
+                    </label>
+                </div>
+                
+                <button id="playButton" class="play-button">
+                    <span class="button-text">PLAY</span>
+                    <div class="button-decoration">⚡ ⛵ ⚡</div>
+                </button>
+            </div>
+            
+            <div class="menu-footer">
+                <p class="game-description">Navigate treacherous waters and reach your ship!</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Screen -->
+    <div id="loadingScreen">
+        <div class="loading-background"></div>
+        <div class="loading-content">
+            <div class="loading-title">
+                <h1>LOADING ADVENTURE...</h1>
+                <div class="loading-decoration">⚓ ☠️ ⚓</div>
+            </div>
+            
+            <div class="loading-spinner">
+                <div class="compass">
+                    <div class="compass-needle"></div>
+                </div>
+            </div>
+            
+            <div class="loading-progress">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+                <div class="loading-text" id="loadingText">Preparing the seas...</div>
+                <div class="loading-percentage" id="loadingPercentage">0%</div>
+            </div>
+        </div>
+    </div>
+
+
+    <div id="gameContainer">
+        <div id="ui">
+            <div>Lives: <span id="lives">3</span></div>
+            <div>Goal: Reach the boat!</div>
+            <div id="coordinates">
+            X: 0.00, Y: 0.00, Z: 0.00
+            </div>
+        </div>
+        
+        <div id="instructions">
+            W/S: Move Forward/Back | A/D: Rotate Left/Right | Space: Jump/double jump | Mouse Wheel: Zoom | C: Toggle Coordinates | V: Toggle camera mode| Press any key to skip intro
+        </div>
+        
+        <div id="gameOverScreen">
+            <h2>Game Over!</h2>
+            <p>You fell into the water or hit an obstacle!</p>
+            <button class="button" onclick="restartGame()">Try Again</button>
+            <button class="button" onclick="returnToMenu()">Main Menu</button>
+        </div>
+        
+        <div id="winScreen">
+            <h2>Congratulations!</h2>
+            <p>You reached the boat safely!</p>
+            <button class="button" onclick="restartGame()">Play Again</button>
+            <button class="button" onclick="returnToMenu()">Main Menu</button>
+        </div>
+    </div>
+    <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js",
+        "three/examples/jsm/": "https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"
+      }
+    }
+    </script>
+    <script type="module" src="js/main.js"></script>
+</body>
+</html>
