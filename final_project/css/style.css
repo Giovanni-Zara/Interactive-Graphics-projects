@@ -1,0 +1,556 @@
+
+body {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    background: linear-gradient(to bottom, #87CEEB 0%, #4682B4 100%);
+    font-family: 'Cinzel', serif;
+}
+
+/* Main Menu Styles */
+#mainMenu {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.menu-background {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: url('/images/background.jpg') center center / cover no-repeat;
+    animation: backgroundWave 15s ease-in-out infinite;
+}
+
+@keyframes backgroundWave {
+    0%, 100% { 
+        background-size: 120% 120%;
+        background-position: 0% 0%;
+    }
+    50% { 
+        background-size: 140% 140%;
+        background-position: 100% 100%;
+    }
+}
+
+.menu-content {
+    text-align: center;
+    color: white;
+    z-index: 1001;
+    position: relative;
+    padding: 40px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 20px;
+    backdrop-filter: blur(10px);
+    border: 2px solid rgba(255, 215, 0, 0.3);
+    box-shadow: 
+        0 0 30px rgba(255, 215, 0, 0.4),
+        inset 0 0 20px rgba(255, 255, 255, 0.1);
+}
+
+/* Title Styles */
+.game-title {
+    margin-bottom: 40px;
+}
+
+.title-main {
+    font-family: 'Pirata One', cursive;
+    font-size: 4.5rem;
+    margin: 0;
+    background: linear-gradient(45deg, #FFD700, #FFA500, #FF6347, #FFD700);
+    background-size: 300% 300%;
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: goldShimmer 3s ease-in-out infinite;
+    text-shadow: 
+        2px 2px 4px rgba(0, 0, 0, 0.8),
+        0 0 20px rgba(255, 215, 0, 0.6);
+    letter-spacing: 3px;
+}
+
+.title-sub {
+    font-family: 'Pirata One', cursive;
+    font-size: 2.5rem;
+    margin: -10px 0 20px 0;
+    color: #FFA500;
+    text-shadow: 
+        2px 2px 4px rgba(0, 0, 0, 0.8),
+        0 0 15px rgba(255, 165, 0, 0.8);
+    letter-spacing: 8px;
+}
+
+.title-decoration {
+    font-size: 2rem;
+    margin: 10px 0;
+    animation: float 2s ease-in-out infinite;
+}
+
+@keyframes goldShimmer {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+}
+
+/* Menu Options */
+.menu-options {
+    margin: 40px 0;
+}
+
+.settings-panel {
+    margin-bottom: 30px;
+}
+
+/* Custom Checkbox */
+.shadow-toggle {
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+    font-size: 1.1rem;
+    color: #FFD700;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.7);
+    transition: all 0.3s ease;
+}
+
+.shadow-toggle:hover {
+    color: #FFA500;
+    transform: scale(1.05);
+}
+
+.shadow-toggle input {
+    display: none;
+}
+
+.checkmark {
+    width: 24px;
+    height: 24px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid #FFD700;
+    border-radius: 4px;
+    margin-right: 10px;
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+.shadow-toggle input:checked + .checkmark {
+    background: linear-gradient(45deg, #FFD700, #FFA500);
+    box-shadow: 0 0 10px rgba(255, 215, 0, 0.6);
+}
+
+.shadow-toggle input:checked + .checkmark::after {
+    content: '✓';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    color: #000;
+    font-weight: bold;
+    font-size: 16px;
+}
+
+/* Play Button */
+.play-button {
+    background: linear-gradient(45deg, #FF6347, #FF4500, #DC143C);
+    border: none;
+    border-radius: 15px;
+    padding: 20px 60px;
+    font-family: 'Pirata One', cursive;
+    font-size: 2.2rem;
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+    border: 3px solid #FFD700;
+    box-shadow: 
+        0 8px 20px rgba(220, 20, 60, 0.4),
+        inset 0 2px 5px rgba(255, 255, 255, 0.3);
+}
+
+.play-button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    transition: left 0.8s ease;
+}
+
+.play-button:hover::before {
+    left: 100%;
+}
+
+.play-button:hover {
+    transform: translateY(-3px) scale(1.05);
+    box-shadow: 
+        0 12px 30px rgba(220, 20, 60, 0.6),
+        0 0 30px rgba(255, 215, 0, 0.4),
+        inset 0 2px 5px rgba(255, 255, 255, 0.4);
+    border-color: #FFA500;
+}
+
+.play-button:active {
+    transform: translateY(-1px) scale(1.02);
+}
+
+.button-text {
+    position: relative;
+    z-index: 2;
+    letter-spacing: 3px;
+}
+
+.button-decoration {
+    font-size: 1.2rem;
+    margin-top: 5px;
+    animation: sparkle 1.5s ease-in-out infinite;
+}
+
+@keyframes sparkle {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.7; transform: scale(1.1); }
+}
+
+/* Menu Footer */
+.menu-footer {
+    margin-top: 30px;
+}
+
+.game-description {
+    font-size: 1.1rem;
+    color: #E6E6FA;
+    font-style: italic;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.7);
+    margin: 0;
+    opacity: 0.9;
+}
+
+/* Game Container (hidden initially) */
+#gameContainer {
+    width: 100vw;
+    height: 100vh;
+    position: relative;
+    display: none; /* Hidden until game starts */
+}
+
+#gameContainer.active {
+    display: block;
+}
+
+#ui {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    color: white;
+    z-index: 100;
+    font-size: 18px;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+    font-family: 'Cinzel', serif;
+}
+
+#instructions {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    color: white;
+    z-index: 100;
+    font-size: 14px;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+    font-family: 'Cinzel', serif;
+}
+
+.hidden {
+    display: none;
+}
+
+#gameOverScreen {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0,0,0,0.8);
+    color: white;
+    padding: 40px;
+    border-radius: 10px;
+    text-align: center;
+    z-index: 200;
+    display: none;
+    font-family: 'Cinzel', serif;
+    border: 2px solid #FF6347;
+}
+
+#winScreen {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0,100,0,0.8);
+    color: white;
+    padding: 40px;
+    border-radius: 10px;
+    text-align: center;
+    z-index: 200;
+    display: none;
+    font-family: 'Cinzel', serif;
+    border: 2px solid #FFD700;
+}
+
+.button {
+    padding: 10px 20px;
+    font-size: 16px;
+    background: #4682B4;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-top: 20px;
+    font-family: 'Cinzel', serif;
+    transition: all 0.3s ease;
+}
+
+.button:hover {
+    background: #5F9EA0;
+    transform: translateY(-2px);
+}
+
+#gameContainer {
+    width: 100vw;
+    height: 100vh;
+    position: relative;
+}
+
+#ui {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    color: white;
+    z-index: 100;
+    font-size: 18px;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+}
+
+#instructions {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    color: white;
+    z-index: 100;
+    font-size: 14px;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+}
+
+.hidden {
+    display: none;
+}
+
+#gameOverScreen {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0,0,0,0.8);
+    color: white;
+    padding: 40px;
+    border-radius: 10px;
+    text-align: center;
+    z-index: 200;
+    display: none;
+}
+
+#winScreen {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0,100,0,0.8);
+    color: white;
+    padding: 40px;
+    border-radius: 10px;
+    text-align: center;
+    z-index: 200;
+    display: none;
+}
+
+.button {
+    padding: 10px 20px;
+    font-size: 16px;
+    background: #4682B4;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-top: 20px;
+}
+
+.button:hover {
+    background: #5F9EA0;
+}
+
+
+
+/* Loading Screen Styles */
+#loadingScreen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: none;
+    z-index: 1000;
+}
+
+.loading-background {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #3f4c6b 100%);
+    opacity: 0.95;
+}
+
+.loading-content {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    color: #fff;
+    font-family: 'Pirata One', cursive;
+}
+
+.loading-title h1 {
+    font-size: 3rem;
+    margin: 0 0 20px 0;
+    text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.7);
+    color: #ffd700;
+}
+
+.loading-decoration {
+    font-size: 2rem;
+    margin-bottom: 40px;
+    opacity: 0.8;
+}
+
+.loading-spinner {
+    margin: 40px 0;
+}
+
+.compass {
+    width: 80px;
+    height: 80px;
+    border: 4px solid #ffd700;
+    border-radius: 50%;
+    position: relative;
+    margin: 0 auto;
+    animation: compass-rotate 3s linear infinite;
+}
+
+.compass-needle {
+    width: 60px;
+    height: 2px;
+    background: #ff6b6b;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    transform-origin: center;
+    animation: needle-spin 2s ease-in-out infinite alternate;
+}
+
+@keyframes compass-rotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+@keyframes needle-spin {
+    from { transform: translate(-50%, -50%) rotate(-45deg); }
+    to { transform: translate(-50%, -50%) rotate(45deg); }
+}
+
+.loading-progress {
+    margin-top: 40px;
+    width: 300px;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 8px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 15px;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #ffd700, #ff6b6b);
+    width: 0%;
+    transition: width 0.3s ease;
+    border-radius: 4px;
+}
+
+.loading-text {
+    font-family: 'Cinzel', serif;
+    font-size: 1.2rem;
+    margin-bottom: 10px;
+    color: #e0e0e0;
+}
+
+.loading-percentage {
+    font-family: 'Cinzel', serif;
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #ffd700;
+}
+
+
+/*WIN STUFF*/
+#winTimer {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0, 0, 0, 0.8);
+    color: #FFD700;
+    padding: 20px 40px;
+    border-radius: 10px;
+    font-size: 24px;
+    font-weight: bold;
+    text-align: center;
+    z-index: 1000;
+    border: 2px solid #FFD700;
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+    display: none; /* Initially hidden */
+}
+
+
+
+#controlModeNotification {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 5px;
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+    z-index: 1000;
+    transition: opacity 0.3s ease;
+}
