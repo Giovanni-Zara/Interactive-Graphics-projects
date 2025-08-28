@@ -149,7 +149,7 @@ Object: unnamed (Type: Group)
 */
 
 export class Pirate {
-    constructor(scene, startPosition = { x: -60, y: 1.10, z: 0 }) {
+    constructor(scene, startPosition = { x: -60, y: 1, z: 0 }) {
         this.scene = scene;
         this.startPosition = startPosition;
         this.mesh = null;
@@ -250,6 +250,15 @@ export class Pirate {
             //console.log(child.name);
             this.bodyParts[child.name] = child;
             console.log(`Registered body part: ${child.name}`);
+        }
+        if (child.isMesh || child.isSkinnedMesh) {
+            child.castShadow = true;
+            child.receiveShadow = true;
+            if (Array.isArray(child.material)) {
+                child.material.forEach(m => { if (m) m.skinning = true; });
+            } else if (child.material) {
+                child.material.skinning = true;
+            }
         }
         
         });

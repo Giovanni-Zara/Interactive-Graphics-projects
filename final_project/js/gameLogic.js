@@ -53,7 +53,7 @@ export class GameLogic {
         this.WATER_LEVEL = -1;
         this.ROTATION_SPEED = 0.04; // How fast the player rotates
         this.SKY_COLOR = 0x87CEEB; // Light blue sky/water color
-        this.PLAYER_HEIGHT_OFFSET = 1; // Height above platforms/water
+        this.PLAYER_HEIGHT_OFFSET = 0; // Height above platforms/water
         this.OBSTACLE_COLLISION_DISTANCE = 1.5;
         this.BOAT_REACH_DISTANCE = 5;
         
@@ -216,6 +216,8 @@ export class GameLogic {
         // Apply gravity
         if (!this.isGrounded){
             this.playerVelocity.y += this.GRAVITY;
+        } else {    //small damping to fix micro fluctuations
+            this.playerVelocity.y = Math.max(0, this.playerVelocity.y);
         }
         // Update position
         playerMesh.position.x += this.playerVelocity.x;
@@ -236,7 +238,7 @@ export class GameLogic {
         
         // Check water collision
 
-        if (playerMesh.position.y <= this.WATER_LEVEL + this.PLAYER_HEIGHT_OFFSET) {
+        if (playerMesh.position.y <= this.WATER_LEVEL) {
             this.loseLife();
         }
         
@@ -375,8 +377,13 @@ export class GameLogic {
                 // Debug: Log which platform is being triggered
                 //console.log(`Platform ${index} triggered at X=${playerMesh.position.x.toFixed(2)}, bounds: ${bounds.minX.toFixed(1)} to ${bounds.maxX.toFixed(1)}`);
                 
-                if (this.playerVelocity.y <= 0 && playerMesh.position.y <= bounds.y + this.PLAYER_HEIGHT_OFFSET && playerMesh.position.y > bounds.y) {
-                    playerMesh.position.y = bounds.y + this.PLAYER_HEIGHT_OFFSET;
+                const targetY = bounds.y;
+                const tolerance = 0.5;
+                if (this.playerVelocity.y <= 0 && 
+                    playerMesh.position.y <= targetY + tolerance && 
+                    playerMesh.position.y > bounds.y - tolerance) {
+
+                    playerMesh.position.y = targetY;
                     this.playerVelocity.y = 0;
                     this.isGrounded = true;
                     this.jumpCount = 0; // Reset jump count when touching ground
