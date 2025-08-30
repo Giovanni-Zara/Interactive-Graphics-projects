@@ -69,7 +69,7 @@ export class Forest {
         //pre load all the materials
         const trunkMaterial = {
             pine: await createMaterial(
-                '../images/pine_trunk.jpg',
+                '../images/pine_trunk.jpeg',
                 0x8B4513,   //simple brown fallback
                 {
                     repeatX: 1,

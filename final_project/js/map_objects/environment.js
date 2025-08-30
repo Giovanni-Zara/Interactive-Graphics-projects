@@ -14,7 +14,6 @@ export class Environment {
         this.ship = null;
         this.obstaclesManager = null;
         this.platforms = [];
-        //this.boat = null;
         this.WATER_LEVEL = -1; // Sea level height
     }
 
@@ -26,12 +25,11 @@ export class Environment {
         await this.createPlatforms();
         await this.initializeObstacles();
         await this.createShip();
-        //this.createBoat();
         this.createLighting();
     }
 
     createSky() {
-        // Option 1: Simple gradient sky using SphereGeometry
+        // gradient sky using SphereGeometry
         const skyGeometry = new THREE.SphereGeometry(500, 32, 15);
         
         // Create gradient material
@@ -66,48 +64,10 @@ export class Environment {
         
         this.sky = new THREE.Mesh(skyGeometry, skyMaterial);
         this.scene.add(this.sky);
-        
-        // Option 2: Alternative - Simple colored sky sphere (uncomment to use instead)
-        /*
-        const skyGeometry = new THREE.SphereGeometry(500, 32, 32);
-        const skyMaterial = new THREE.MeshBasicMaterial({ 
-            color: 0x87CEEB, // Sky blue
-            side: THREE.BackSide 
-        });
-        this.sky = new THREE.Mesh(skyGeometry, skyMaterial);
-        this.scene.add(this.sky);
-        */
-        
-        // Option 3: Using scene background (uncomment to use instead)
-        /*
-        // Simple background color
-        this.scene.background = new THREE.Color(0x87CEEB);
-        
-        // Or with texture (if you have a skybox texture)
-        // const loader = new THREE.TextureLoader();
-        // const texture = loader.load('path/to/your/skybox/texture.jpg');
-        // this.scene.background = texture;
-        */
     }
-
-    /*
-    createSea() {
-        const seaGeometry = new THREE.PlaneGeometry(200, 200);
-        const seaMaterial = new THREE.MeshLambertMaterial({ 
-            color: 0x006994,
-            transparent: true,
-            opacity: 0.8
-        });
-        const sea = new THREE.Mesh(seaGeometry, seaMaterial);
-        sea.rotation.x = -Math.PI / 2;
-        sea.position.y = -1; // WATER_LEVEL
-        sea.receiveShadow = true;
-        this.scene.add(sea);
-    }*/
-
     
     createSea() {
-        const seaGeometry = new THREE.PlaneGeometry(200, 200, 100, 100); // (width, height, widthSegment, heightSegment) add segments for waves
+        const seaGeometry = new THREE.PlaneGeometry(200, 200, 100, 100); // (width, height, widthSegment, heightSegment) segments for waves
         const seaMaterial = new THREE.MeshPhongMaterial({ 
             color: 0x006994,
             transparent: true,
@@ -142,11 +102,6 @@ export class Environment {
         }
         this.scene.add(this.sea);
     }
-
-    /*getSeaLevel(x, z, time){  USELESS
-        return this.WATER_LEVEL + Math.sin(x / 5 + time * 2) * 0.5 
-                                + Math.cos(z / 5 + time) * 0.3;
-    }*/
 
     updateSea(time) {
         const position = this.sea.geometry.attributes.position;
@@ -193,16 +148,33 @@ export class Environment {
         this.forest.create(this.scene, this.platforms);
     }
 
-    async createPlatforms() {
+    async createPlatforms() {   //ship is {x:150, y: -1.5, z: 0}        //partendo da z:-9 e x:70 fare i legni che affondano   
         const rockPositions = [
-            { x: -30, z: 0 },
-            { x: -19, z: 5 },
-            { x: -9, z: -3 },
-            { x: 5, z: 2 },
-            { x: 15, z: -4 },
-            { x: 25, z: 1 },
-            { x: 35, z: -2 }
+                                            { x: -30, z: 0 },
+                                            { x: -19, z: 5 },
+                                            { x: -9, z: -3 },
+                                            { x: 5, z: 2 },
+                                            { x: 15, z: -4 },
+                                            { x: 25, z: 1 },
+                                            { x: 40, z: -2 },
+                                            { x: 55, z: -4},
+                                            { x: 70, z: -10},
+                                                                
+                        { x: 85, z: -23 },                      { x: 85, z: 6 },
+                        { x: 100, z: -30 },                     { x: 100, z: 15 },
+                        { x: 120, z: -40 },                     { x: 117, z: 34 }, 
+                        { x: 140, z: -27 },                     { x: 130, z: 20 },
+                        {x : 137, z: -10 },                     { x: 137, z: 6 },
         ];
+
+        const sinkingLogPositions = [
+                                            {x : 80, z: -9 },
+                                            {x : 90, z: -9 },
+                                            {x : 100, z: -9 },
+                                            {x : 110, z: -9 },
+                                            {x : 120, z: -9 },
+                                            {x : 130, z: -9 },
+        ]
         
         const rockMaterial = await createMaterial(
             '../images/moss_rock.jpeg',
@@ -212,7 +184,16 @@ export class Environment {
                 repeatY: 1
             }
         );
-        
+
+        const logMaterial = await createMaterial(
+            '../images/oak_trunk.jpg',
+            0x8B4513,   //simple brown fallback
+            {
+                repeatX: 1,
+                repeatY: 1
+            }
+        );
+
         rockPositions.forEach((pos, index) => {
             const size = 3 + Math.random() * 1.5;
             const rockGeometry = new THREE.CylinderGeometry(size, size, 1, 8);
@@ -245,7 +226,61 @@ export class Environment {
                     y: base + 0.5
                 },
                 floatingData: floatingData,
+                type: 'rock',
                 size: size  //gotta see if i need this for bound updating
+            });
+        });
+
+        sinkingLogPositions.forEach((pos, index) => {
+            const logLenght = 4 + Math.random() *2
+            const logRadius = 0.8 + Math.random() * 0.4
+
+            const logGeometry = new THREE.CylinderGeometry(logRadius, logRadius, logLenght, 12);
+            
+            const log = new THREE.Mesh(logGeometry, logMaterial);
+
+            const base = this.WATER_LEVEL + 0.5; //a bit above water
+            log.position.set(pos.x, base, pos.z);
+            log.rotation.z = Math.PI / 2; //i want it to lie horizontally
+            log.castShadow = true;
+            log.receiveShadow = true;
+            this.scene.add(log);
+
+            const floatingData = {
+                originalY: base,
+                amplitude: 0.08 + Math.random() * 0.06,
+                frequency: 0.6 + Math.random() * 0.3,
+                phase: Math.random() * Math.PI * 2,
+                tiltAmplitude: 0.03 + Math.random() * 0.05,
+                tiltFrequency: 0.5 + Math.random() * 0.2
+            };
+
+            const sinkingData = {
+                isSinking: false,
+                sinkStartTime: 0,
+                sinkDuration: 2.0,
+                playerOnTime: 0,
+                triggerDelay: 3.5,
+                originalY: base,
+                targetY: this.WATER_LEVEL - 2, //idc where, as long as it below water level
+                hasPlayerOnIt: false,
+                fullySubmerged: false,
+                bubbleEffects: []
+            };
+
+            this.platforms.push({
+                mesh: log,
+                bounds: {
+                    minX: pos.x - logLenght / 2,
+                    maxX: pos.x + logLenght / 2,
+                    minZ: pos.z - logRadius,
+                    maxZ: pos.z + logRadius,
+                    y: base + logRadius
+                },
+                floatingData: floatingData,
+                sinkingData: sinkingData,
+                type: 'sinkingLog',
+                size: Math.max(logLenght / 2, logRadius)  //gotta see if i need this for bound updating, prolly not but..
             });
         });
     }
@@ -258,7 +293,7 @@ export class Environment {
 
 
     async createShip() {
-        this.ship = new Ship(this.scene, {x: 48, y: -1.5, z: 0});
+        this.ship = new Ship(this.scene, {x: 150, y: -1.5, z: 0});
         await this.ship.init();
         
         // Add ship platform to platforms array for collision detection
@@ -270,40 +305,6 @@ export class Environment {
             });
         }
     }
-
-
-    /*
-    createBoat() {
-        const boatGroup = new THREE.Group();
-        
-        // Hull
-        const hullGeometry = new THREE.BoxGeometry(6, 2, 3);
-        const hullMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
-        const hull = new THREE.Mesh(hullGeometry, hullMaterial);
-        hull.position.y = 1;
-        hull.castShadow = true;
-        boatGroup.add(hull);
-        
-        // Mast
-        const mastGeometry = new THREE.CylinderGeometry(0.1, 0.1, 8, 8);
-        const mastMaterial = new THREE.MeshLambertMaterial({ color: 0x654321 });
-        const mast = new THREE.Mesh(mastGeometry, mastMaterial);
-        mast.position.y = 5;
-        mast.castShadow = true;
-        boatGroup.add(mast);
-        
-        // Sail
-        const sailGeometry = new THREE.PlaneGeometry(4, 6);
-        const sailMaterial = new THREE.MeshLambertMaterial({ color: 0xFFFFFF });
-        const sail = new THREE.Mesh(sailGeometry, sailMaterial);
-        sail.position.set(1, 5, 0);
-        sail.castShadow = true;
-        boatGroup.add(sail);
-        
-        boatGroup.position.set(50, 0, 0);
-        this.scene.add(boatGroup);
-        this.boat = boatGroup;
-    }*/
 
     createLighting() {
         // Ambient light
@@ -319,9 +320,8 @@ export class Environment {
         directionalLight.shadow.mapSize.height = 2048;
         directionalLight.shadow.camera.near = 0.5;
         directionalLight.shadow.camera.far = 500;
-        // Expand shadow camera to cover the entire game world
         directionalLight.shadow.camera.left = -150;   // Cover forest area
-        directionalLight.shadow.camera.right = 100;   // Cover boat area
+        directionalLight.shadow.camera.right = 100;   // Cover ship area
         directionalLight.shadow.camera.top = 150;     // Cover full depth
         directionalLight.shadow.camera.bottom = -150; // Cover full depth
         this.scene.add(directionalLight);
@@ -365,7 +365,7 @@ export class Environment {
 
     updatePlatforms(time){
         this.platforms.forEach(platform => {
-            if (platform.floatingData){
+            if (platform.floatingData && !platform.sinkingData?.isSinking){
                 const floatingData = platform.floatingData;
                 const rock = platform.mesh;
 
@@ -373,14 +373,167 @@ export class Environment {
                 const bobbing = Math.sin(time * floatingData.frequency + floatingData.phase) * floatingData.amplitude;
                 rock.position.y = floatingData.originalY + bobbing;
 
-                //some tilting motion
+                //some tilting motion - rock
                 const tiltX = Math.sin(time * floatingData.frequency + floatingData.phase) * floatingData.amplitude;
                 const tiltZ = Math.cos(time * floatingData.frequency + floatingData.phase) * floatingData.tiltAmplitude;
                 rock.rotation.x = tiltX;
                 rock.rotation.z = tiltZ;
 
-                //new bounds, gotta see if gonna use
-                platform.bounds.y = rock.position.y + 0.5;
+                //bounds
+                if (platform.type !== 'sinkingLog') {
+                    platform.bounds.y = rock.position.y + 0.5;
+                }
+
+                if (platform.type === 'sinkingLog') {
+                    platform.bounds.y = rock.position.y + platform.size;
+                }
+
+            }
+
+            //sinking animation for logs
+            if (platform.type === 'sinkingLog' && platform.sinkingData) {
+                this.updateSinkingLog(platform, time);
+            }
+        });
+    }
+
+    updateSinkingLog(platform, time) {
+        const sinkingData = platform.sinkingData;
+        const mesh = platform.mesh;
+
+        if (sinkingData.isSinking) {    //sinking trigger expired, log starts sinking
+            const sinkProgress = (time - sinkingData.sinkStartTime) / sinkingData.sinkDuration; //value from 0 (just started) to 1 (fully submerged)
+
+            if (sinkProgress < 1.0) {   // sink it
+                const easedProgress = this.easeInQuad(sinkProgress);    //just t*t, seen online that this is the common standard. tried a lot of temporal laws for interpolation. this is the best so far
+                const currentY = THREE.MathUtils.lerp(sinkingData.originalY, sinkingData.targetY, 0.75);    //static factor, works better than the dynamic. that depends on game time, it is difficult to fix
+                mesh.position.y = currentY;
+
+                const sinkRotation = easedProgress * Math.PI * 0.3; //a bit of rotation while sinking
+                mesh.rotation.x = sinkRotation * 0.3;
+                mesh.rotation.z = sinkRotation * 0.2;
+
+                if (Math.floor(time * 10) % 5 === 0 && Math.random() < 0.3) {    //periodic bubbles
+                    this.createBubbleEffect(mesh.position);
+                    console.log('bubble');
+                }
+                platform.bounds.y = currentY - 2; //update, prolly useless. consistency
+            } else {    //if fully sunk
+                mesh.position.y = sinkingData.targetY;
+                platform.bounds.y = sinkingData.targetY - 3; //way below collision detection
+                sinkingData.fullySubmerged = true;
+            }
+        }
+    }
+    createBubbleEffect(position) {
+        for (let i = 0; i < 3; i++) {
+            // Create individual geometry and material for each bubble
+            const bubbleGeometry = new THREE.SphereGeometry(0.08 + Math.random() * 0.04, 6, 4); // Vary size slightly
+            const bubbleMaterial = new THREE.MeshBasicMaterial({ 
+                color: 0x87CEEB, 
+                transparent: true, 
+                opacity: 0.7 + Math.random() * 0.3 // Vary initial opacity
+            });
+            
+            const bubble = new THREE.Mesh(bubbleGeometry, bubbleMaterial);
+            bubble.position.set(
+                position.x + (Math.random() - 0.5) * 1.5,
+                position.y + Math.random() * 0.3,
+                position.z + (Math.random() - 0.5) * 1.5
+            );
+            this.scene.add(bubble);
+
+            // Store animation data on the bubble object
+            bubble.data = {
+                riseSpeed: 0.015 + Math.random() * 0.01,
+                fadeSpeed: 0.006 + Math.random() * 0.004,
+                driftX: (Math.random() - 0.5) * 0.008,
+                driftZ: (Math.random() - 0.5) * 0.008,
+                maxHeight: position.y + 2 + Math.random() * 2
+            };
+
+            const animateBubble = () => {
+                const data = bubble.data;
+                
+                bubble.position.y += data.riseSpeed;
+                bubble.position.x += data.driftX;
+                bubble.position.z += data.driftZ;
+                bubble.material.opacity -= data.fadeSpeed;
+
+                if (bubble.material.opacity <= 0 || bubble.position.y > data.maxHeight) {
+                    this.scene.remove(bubble);
+                    bubble.geometry.dispose();
+                    bubble.material.dispose();
+                } else {
+                    requestAnimationFrame(animateBubble);
+                }
+            };
+            
+            animateBubble();
+        }
+    }
+    easeInQuad(t) {
+        return t * t;
+    }
+
+    checkSinkingLogCollision(playerPosition) {
+        this.platforms.forEach(platform => {
+            if (platform.type === 'sinkingLog' && platform.sinkingData) {
+                const bounds = platform.bounds;
+                const sinkingData = platform.sinkingData;
+                
+                // Check if player is on this log
+                const isOnLog = playerPosition.x > bounds.minX && 
+                            playerPosition.x < bounds.maxX &&
+                            playerPosition.z > bounds.minZ && 
+                            playerPosition.z < bounds.maxZ &&
+                            playerPosition.y >= bounds.y - 1 &&
+                            playerPosition.y <= bounds.y + 1;
+
+                if (isOnLog && !sinkingData.isSinking && !sinkingData.fullySubmerged) {
+                    if (!sinkingData.hasPlayerOnIt) {
+                        // Player just stepped on the log
+                        sinkingData.hasPlayerOnIt = true;
+                        sinkingData.playerOnTime = performance.now() * 0.001;   //converting to seconds
+                        //console.log('Player stepped on sinking log!');
+                    }
+                }
+
+                // Check if enough time has passed to start sinking
+                if (sinkingData.hasPlayerOnIt && !sinkingData.isSinking && !sinkingData.fullySubmerged) {
+                    const timeOnLog = (performance.now() * 0.001) - sinkingData.playerOnTime;
+                    if (timeOnLog >= sinkingData.triggerDelay) {
+                        sinkingData.isSinking = true;
+                        sinkingData.sinkStartTime = performance.now() * 0.001;
+                        //console.log('Log starting to sink!');
+                    }
+                }
+                /* else if (!isOnLog) {    Gotta decide if I want this or just let it sink anyway
+                    // Player left the log, reset timer if not already sinking
+                    if (!sinkingData.isSinking) {
+                        sinkingData.hasPlayerOnIt = false;
+                        sinkingData.playerOnTime = 0;
+                    }
+                }*/
+            }
+        });
+    }
+
+    //reset sinked logs after game reset
+    resetSinkingLogs() {
+        this.platforms.forEach(platform => {
+            if (platform.type === 'sinkingLog' && platform.sinkingData) {
+                platform.sinkingData.isSinking = false;
+                platform.sinkingData.fullySubmerged = false;
+                platform.sinkingData.hasPlayerOnIt = false;
+                platform.sinkingData.playerOnTime = 0;
+                platform.sinkingData.sinkStartTime = 0;
+
+                platform.mesh.position.y = platform.sinkingData.originalY;
+                platform.mesh.rotation.x = 0;
+                platform.mesh.rotation.z = Math.PI / 2;
+
+                platform.bounds.y = platform.sinkingData.originalY + platform.size;
             }
         });
     }
@@ -401,17 +554,11 @@ export class Environment {
         return this.platforms;
     }
 
-    
-
     getObstacles() {
         return this.obstaclesManager ? this.obstaclesManager.getObstacles() : [];
     }
 
     getShip() {
         return this.ship.getShipGroup();
-    }
-
-    getBoat() {
-        return this.boat;
     }
 }

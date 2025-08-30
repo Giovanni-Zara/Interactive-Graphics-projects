@@ -45,6 +45,9 @@ export class GameLogic {
         this.isSprinting = false;
         this.isJumping = false;
         this.lastFrameTime = 0;
+        this.isDrowning = false;
+        this.drowningStartTime = 0;
+        this.DROWNING_DURATION = 3.0;
 
         // Game constants
         this.GRAVITY = -0.015;
@@ -139,7 +142,7 @@ export class GameLogic {
 
             updateProgress(70, "Loading Captain Jack Sparrow...");
             // Create player
-            this.playerObject = new Pirate(this.scene, { x: -60, y: 1, z: 0 }); //-60 1 0
+            this.playerObject = new Pirate(this.scene, { x: -150, y: 1, z: -10 }); //-60 1 0
             await this.playerObject.init();
             console.log('Player created');
 
@@ -213,6 +216,13 @@ export class GameLogic {
         const deltaTime = (currentTime - this.lastFrameTime) * 0.001; // Convert to seconds
         this.lastFrameTime = currentTime;
 
+        //handle drowning
+        if (this.isDrowning) {
+            this.updateDrowning(deltaTime);
+            this.playerObject.update(deltaTime);
+            return;
+        }
+
         // Apply gravity
         if (!this.isGrounded){
             this.playerVelocity.y += this.GRAVITY;
@@ -235,32 +245,25 @@ export class GameLogic {
         this.checkPlatformCollisions();
         this.checkSolidCollisions(); // Add solid collision check
         this.checkObstacleCollisions();
+
+        //log collision
+        this.environment.checkSinkingLogCollision(playerMesh.position);
         
         // Check water collision
 
         if (playerMesh.position.y <= this.WATER_LEVEL) {
-            this.loseLife();
+            this.startDrowning();
         }
-        
-        /*
-        // Check if reached boat
-        const boat = this.environment.getBoat();
-        if (boat && boat.position && playerMesh.position.distanceTo(boat.position) < this.BOAT_REACH_DISTANCE) {
-            this.winGame();
-        }*/
 
         this.checkShipWinCondition(playerMesh);
-
-        /*
-        //check if reached ship
-        const ship = this.environment.getShip();
-        if (ship && this.environment.ship && this.environment.ship.isPlayerOnShip(playerMesh.position)) {
-            console.log('Player reached ship! Winning game...');
-            this.winGame();
-        }*/
     }
 
+    
     updatePlayerAnimation() {
+        if (this.isDrowning) {
+            return;     //if drowning keep the animation active
+        }
+
         const horizontalSpeed = Math.sqrt(this.playerVelocity.x * this.playerVelocity.x + this.playerVelocity.z * this.playerVelocity.z);   //simple triangle theorem
         this.isMoving = horizontalSpeed > 0.01;
         this.isJumping = !this.isGrounded;
@@ -283,85 +286,6 @@ export class GameLogic {
     setSprinting(sprinting) {   //for input handler
         this.isSprinting = sprinting;
     }
-
-    checkShipWinCondition(playerMesh) {
-        const ship = this.environment.getShip();
-        if (ship && this.environment.ship) {
-            const currentlyOnShip = this.environment.ship.isPlayerOnShip(playerMesh.position);
-            
-            if (currentlyOnShip) {
-                if (!this.isOnShip) {
-                    // Player just got on ship
-                    this.isOnShip = true;
-                    this.onShipStartTime = this.gameTime;
-                    console.log('Player reached ship! Starting win timer...');
-                    this.showWinTimer();
-                }
-                
-                // Check if enough time has passed
-                const timeOnShip = this.gameTime - this.onShipStartTime;
-                this.updateWinTimer(timeOnShip);
-                
-                if (timeOnShip >= this.WIN_DELAY) {
-                    console.log('Win timer completed! Winning game...');
-                    this.hideWinTimer();
-                    this.winGame();
-                }
-            } else {
-                if (this.isOnShip) {
-                    // Player left the ship, reset timer
-                    console.log('Player left ship, resetting win timer...');
-                    this.resetShipTimer();
-                }
-            }
-        }
-    }
-
-    resetShipTimer() {
-        this.isOnShip = false;
-        this.onShipStartTime = 0;
-        this.hideWinTimer();
-    }
-
-    showWinTimer() {
-        // Create or show the win timer UI
-        let timerElement = document.getElementById('winTimer');
-        if (!timerElement) {
-            timerElement = document.createElement('div');
-            timerElement.id = 'winTimer';
-            document.body.appendChild(timerElement);
-        }
-        timerElement.style.display = 'block';
-    }
-
-    updateWinTimer(timeOnShip) {
-        const timerElement = document.getElementById('winTimer');
-        if (timerElement) {
-            const remainingTime = Math.max(0, this.WIN_DELAY - timeOnShip);
-            const seconds = Math.ceil(remainingTime);
-            
-            if (seconds > 0) {
-                timerElement.innerHTML = `
-                    <div>🚢 Boarding the Ship! 🚢</div>
-                    <div style="font-size: 18px; margin-top: 10px;">
-                        Securing victory in: ${seconds}s
-                    </div>
-                `;
-            } else {
-                timerElement.innerHTML = `
-                    <div>🎉 Victory Secured! 🎉</div>
-                `;
-            }
-        }
-    }
-
-    hideWinTimer() {
-        const timerElement = document.getElementById('winTimer');
-        if (timerElement) {
-            timerElement.style.display = 'none';
-        }
-    }
-
 
     checkPlatformCollisions() {
         this.isGrounded = false;
@@ -520,12 +444,16 @@ export class GameLogic {
     }
 
     resetPlayerPosition() {
+        this.isDrowning = false;
+        this.hideDrowningMessage();
+
         this.playerObject.reset();
         this.playerRotation = this.playerObject.INIT_ROTATION;
         this.playerVelocity = { x: 0, y: 0, z: 0 };
         this.jumpCount = 0; // Reset jump count
         this.spacePressed = false; // Reset space key state
         this.resetShipTimer();
+        this.environment.resetSinkingLogs();
     }
 
     updateCoordinateDisplay() {
@@ -571,5 +499,162 @@ export class GameLogic {
 
     setGameState(state) {
         this.gameState = state;
+    }
+
+
+
+    /*------------------------------------------------SHIP REACHING WIN -----------------------------------------*/
+
+    checkShipWinCondition(playerMesh) {
+        const ship = this.environment.getShip();
+        if (ship && this.environment.ship) {
+            const currentlyOnShip = this.environment.ship.isPlayerOnShip(playerMesh.position);
+            
+            if (currentlyOnShip) {
+                if (!this.isOnShip) {
+                    // Player just got on ship
+                    this.isOnShip = true;
+                    this.onShipStartTime = this.gameTime;
+                    console.log('Player reached ship! Starting win timer...');
+                    this.showWinTimer();
+                }
+                
+                // Check if enough time has passed
+                const timeOnShip = this.gameTime - this.onShipStartTime;
+                this.updateWinTimer(timeOnShip);
+                
+                if (timeOnShip >= this.WIN_DELAY) {
+                    console.log('Win timer completed! Winning game...');
+                    this.hideWinTimer();
+                    this.winGame();
+                }
+            } else {
+                if (this.isOnShip) {
+                    // Player left the ship, reset timer
+                    console.log('Player left ship, resetting win timer...');
+                    this.resetShipTimer();
+                }
+            }
+        }
+    }
+
+    resetShipTimer() {
+        this.isOnShip = false;
+        this.onShipStartTime = 0;
+        this.hideWinTimer();
+    }
+
+    showWinTimer() {
+        // Create or show the win timer UI
+        let timerElement = document.getElementById('winTimer');
+        if (!timerElement) {
+            timerElement = document.createElement('div');
+            timerElement.id = 'winTimer';
+            document.body.appendChild(timerElement);
+        }
+        timerElement.style.display = 'block';
+    }
+
+    updateWinTimer(timeOnShip) {
+        const timerElement = document.getElementById('winTimer');
+        if (timerElement) {
+            const remainingTime = Math.max(0, this.WIN_DELAY - timeOnShip);
+            const seconds = Math.ceil(remainingTime);
+            
+            if (seconds > 0) {
+                timerElement.innerHTML = `
+                    <div>🚢 Boarding the Ship! 🚢</div>
+                    <div style="font-size: 18px; margin-top: 10px;">
+                        Securing victory in: ${seconds}s
+                    </div>
+                `;
+            } else {
+                timerElement.innerHTML = `
+                    <div>🎉 Victory Secured! 🎉</div>
+                `;
+            }
+        }
+    }
+
+    hideWinTimer() {
+        const timerElement = document.getElementById('winTimer');
+        if (timerElement) {
+            timerElement.style.display = 'none';
+        }
+    }
+
+
+
+    /* --------------------------------------------- DROWNING PART --------------------------------------- */
+    startDrowning() {
+        if (this.isDrowning || this.gameState !== 'playing') return;
+
+        this.isDrowning = true;
+        this.drowningStartTime = this.gameTime;
+
+        //stop all movement and start drowning animation
+        this.playerVelocity = {x: 0, y: 0, z: 0};
+        this.playerObject.setAnimation('drown');
+
+        this.showDrowningMessage();
+    }
+
+    updateDrowning(deltaTime) {
+        const drowningTime = this.gameTime - this.drowningStartTime;
+
+        const drownSpeed = 0.02;    //slow drowning
+        this.playerObject.mesh.position.y -= drownSpeed;
+
+        this.updateDrowningMessage(drowningTime);
+
+        if (drowningTime >= this.DROWNING_DURATION) {
+            this.completeDrowning();
+        }
+    }
+
+    completeDrowning() {
+        this.isDrowning = false;
+        this.hideDrowningMessage();
+
+        this.playerObject.setAnimation('idle');
+        this.loseLife();
+    }
+
+    showDrowningMessage() {
+        let drowningElement = document.getElementById('drowningMessage');
+        if (!drowningElement) {
+            drowningElement = document.createElement('div');
+            drowningElement.id = 'drowningMessage';
+            document.body.appendChild(drowningElement);
+        }
+        drowningElement.style.display = 'block';
+    }
+
+    updateDrowningMessage(drowningTime) {
+        const drowningElement = document.getElementById('drowningMessage');
+        if (drowningElement) {
+            const remainingTime = Math.max(0, this.DROWNING_DURATION - drowningTime);
+            const seconds = Math.ceil(remainingTime);
+
+            if (seconds > 0) {
+                drowningElement.innerHTML = `
+                    <div>🌊 DROWNING! 🌊</div>
+                    <div style="font-size: 18px; margin-top: 10px;">
+                        Blub blub blub...${seconds}s
+                    </div>
+                `;
+            } else {
+                drowningElement.innerHTML = `
+                    <div>💀💀💀💀</div>
+                `;
+            }
+        }
+    }
+
+    hideDrowningMessage() {
+        const drowningElement = document.getElementById('drowningMessage');
+        if (drowningElement) {
+            drowningElement.style.display = 'none';
+        }
     }
 }

@@ -158,6 +158,7 @@ export class Pirate {
         this.animationTime = 0;
         this.INIT_ROTATION = Math.PI/2;
         this.rotation = this.INIT_ROTATION;
+        this.piratePosition = null;
 
         //animation stuff
         this.bodyParts = {};
@@ -171,6 +172,11 @@ export class Pirate {
 
         //afteranimation reset
         this.needsReset = false;
+
+        //for the drowning sequence
+        this.isDrowning = false;
+        this.drowningStartTime = 0;
+        this.drowningIntensity = 1.0;
 
         this.animationParameters = {
             idle: {
@@ -198,6 +204,14 @@ export class Pirate {
                 elbowBend: 0.6,
                 legBend: 0.8,
                 bodyArch: 0.3
+            },
+            drown: {
+                armWave: {amplitude: 1.2, frequency: 8},
+                headSwing: {amplitude: 0.4, frequency: 6},
+                bodyStruggle: {amplitude: 0.4, frequency: 7},
+                legKick: {amplitude: 0.8, frequency: 9},
+                hand: {amplitude: 0.6, frequency: 10},
+                spineArch: {amplitude: 0.2, frequency: 5}
             }
         };
 
@@ -245,24 +259,22 @@ export class Pirate {
 
         // Process the loaded FBX
         object.traverse((child) => {
-        if (child.isBone){
-            //console.log('FUNGE')
-            //console.log(child.name);
-            this.bodyParts[child.name] = child;
-            console.log(`Registered body part: ${child.name}`);
-        }
-        if (child.isMesh || child.isSkinnedMesh) {
-            child.castShadow = true;
-            child.receiveShadow = true;
-            if (Array.isArray(child.material)) {
-                child.material.forEach(m => { if (m) m.skinning = true; });
-            } else if (child.material) {
-                child.material.skinning = true;
+            if (child.isBone){
+                //console.log('FUNGE')
+                //console.log(child.name);
+                this.bodyParts[child.name] = child;
+                console.log(`Registered body part: ${child.name}`);
             }
-        }
-        
+            if (child.isMesh || child.isSkinnedMesh) {
+                child.castShadow = true;
+                child.receiveShadow = true;
+                if (Array.isArray(child.material)) {
+                    child.material.forEach(m => { if (m) m.skinning = true; });
+                } else if (child.material) {
+                    child.material.skinning = true;
+                }
+            }
         });
-
         // Scale 
         object.scale.set(0.07, 0.07, 0.07);
 
@@ -281,6 +293,57 @@ export class Pirate {
 
         this.loaded = true;
     }
+
+    logObjectHierarchy(object, depth = 0) {
+        const indent = ' '.repeat(depth);
+        console.log(`${indent}Object: ${object.name || 'unnamed'} (Type: ${object.type})`);
+
+        if (object.isMesh) {
+        console.log(`${indent}  - Mesh with ${object.geometry.attributes.position.count} vertices`);
+        console.log(`${indent}  - Position: (${object.position.x.toFixed(2)}, ${object.position.y.toFixed(2)}, ${object.position.z.toFixed(2)})`);
+        console.log(`${indent}  - Scale: (${object.scale.x.toFixed(2)}, ${object.scale.y.toFixed(2)}, ${object.scale.z.toFixed(2)})`);
+        }
+    
+        if (object.children && object.children.length > 0) {
+            console.log(`${indent}  Children: ${object.children.length}`);
+            object.children.forEach(child => {
+                this.logObjectHierarchy(child, depth + 1);
+            });
+        }
+
+    }
+
+    getBodyParts() {    //list
+        return Object.keys(this.bodyParts);
+    }
+
+    getBodyPart(name) { //single part
+        return this.bodyParts[name];
+    }
+
+    setRotation(rotation) {
+        this.rotation = rotation;
+        if (this.mesh) {
+            this.mesh.rotation.y = rotation;
+        }
+    }
+
+    // Get distance to another object
+    distanceTo(targetPosition) {
+        if (this.mesh.position) {
+            return this.mesh.position.distanceTo(targetPosition);
+        }
+        return Infinity;
+    }
+
+    reset(){
+        this.mesh.position.set(this.startPosition.x, this.startPosition.y, this.startPosition.z);
+        this.mesh.rotation.set(0, this.INIT_ROTATION, 0);
+        this.rotation = this.INIT_ROTATION;
+    }
+
+
+/*--------------------------------------------------- ANIMATION PART --------------------------------------------*/
 
     storeInitialRotations() {
         Object.keys(this.bodyParts).forEach(boneName => {
@@ -314,6 +377,17 @@ export class Pirate {
 
     setAnimation(newAnimation) {
         if (newAnimation != this.animation) {
+            //special part for drowning
+            if (newAnimation === 'drown') {
+                this.isDrowning = true;
+                this.drowningStartTime = this.animationTime;
+                this.drowningIntensity = 1.0;
+            } else if (this.animation === 'drown') {    //basically stop the struggle when dies
+                this.isDrowning = false;
+                this.drowningIntensity = 0;
+                this.needsReset = true;
+            }
+
             // i need to check if i'm transitioning from some movement to idle
             if ((this.animation === 'walk' || this.animation === 'sprint' || this.animation === 'jump') && newAnimation === 'idle') {
                 this.needsReset = true;
@@ -363,6 +437,9 @@ export class Pirate {
                 break;
             case 'jump':
                 this.animateJump(time);
+                break;
+            case 'drown':
+                this.animateDrown(time);
                 break;
         }
         this.applyAnimations();
@@ -448,8 +525,8 @@ export class Pirate {
 
         //elbow
         const elbowBend = Math.max(0, Math.sin(time * params.armSwing.frequency) * 0.8);
-        this.setTargetRotation('mixamorigLeftForearm', 'z', elbowBend);
-        this.setTargetRotation('mixamorigRightForearm', 'z', -elbowBend);
+        this.setTargetRotation('mixamorigLeftForeArm', 'z', elbowBend);
+        this.setTargetRotation('mixamorigRightForeArm', 'z', -elbowBend);
 
         //body bob
         const bodyBob = Math.abs(Math.sin(time * params.bodyBob.frequency)) * params.bodyBob.amplitude;
@@ -488,8 +565,8 @@ export class Pirate {
 
         //elbow
         //const elbow = Math.max(0, Math.sin(time * params.elbowBend.frequency) * 1.5);
-        this.setTargetRotation('mixamorigLeftForearm', 'z', 10);
-        this.setTargetRotation('mixamorigRightForearm', 'z', params.elbowBend);
+        this.setTargetRotation('mixamorigLeftForeArm', 'z', params.elbowBend);
+        this.setTargetRotation('mixamorigRightForeArm', 'z', -params.elbowBend);
 
         //bend legs
         this.setTargetRotation('mixamorigLeftUpLeg', 'x', params.legBend * 0.6);
@@ -500,12 +577,84 @@ export class Pirate {
 
         //body arch
         this.setTargetRotation('mixamorigSpine', 'x', -params.bodyArch);
-/*
-        Object.keys(this.bodyParts).forEach(boneName => {
-            const bone = this.bodyParts[boneName];
-            this.applyNaturalPose(bone, boneName);
-        });*/
+    }
 
+    animateDrown(time) {
+        const position = this.mesh.position;
+        const params = this.animationParameters.drown;
+        const drowningTime = time - this.drowningStartTime;
+
+        const maxDrowningTime = 3.0;//after 3sec pirate dies, I want to gradually reduce intensity
+        this.drowningIntensity = Math.max(0.3, 1.0 - (drowningTime / maxDrowningTime) * 0.7);
+
+        //arm wave
+        const armWave1 = Math.sin(time * params.armWave.frequency) * params.armWave.amplitude * this.drowningIntensity;
+        const armWave2 = Math.sin(time * params.armWave.frequency + Math.PI * 0.3) * params.armWave.amplitude * this.drowningIntensity;
+
+        this.setTargetRotation('mixamorigLeftArm', 'x', -1.2 + armWave1 * 0.5);
+        this.setTargetRotation('mixamorigLeftArm', 'z', armWave1 * 0.8);
+        this.setTargetRotation('mixamorigRightArm', 'x', -1.3 + armWave2 * 0.5);
+        this.setTargetRotation('mixamorigRightArm', 'z', -armWave2 * 0.8);
+
+        //forearm
+        const forearmShake1 = Math.sin(time * params.hand.frequency) * params.hand.amplitude * this.drowningIntensity;
+        const forearmShake2 = Math.sin(time * params.hand.frequency + Math.PI * 0.4) * params.hand.amplitude * this.drowningIntensity;
+
+        this.setTargetRotation('mixamorigLeftForeArm', 'x', forearmShake1);
+        this.setTargetRotation('mixamorigLeftForeArm', 'z', forearmShake1 * 0.5);
+        this.setTargetRotation('mixamorigRightForeArm', 'x', forearmShake2);
+        this.setTargetRotation('mixamorigRightForeArm', 'z', -forearmShake2 * 0.5);
+
+        //head swing
+        const headSwing = Math.sin(time * params.headSwing.frequency) * params.headSwing.amplitude * this.drowningIntensity;
+        const headUp = -0.3 + Math.abs(headSwing) * 0.5;
+        const headTurn = Math.sin(time * params.headSwing.frequency * 0.7) * 0.4 * this.drowningIntensity;
+
+        this.setTargetRotation('mixamorigHead', 'y', headTurn);
+        this.setTargetRotation('mixamorigHead', 'x', headUp);
+        this.setTargetRotation('mixamorigNeck', 'x', headSwing * 0.5);
+
+        //body
+        const spineArch = Math.sin(time * params.spineArch.frequency) * params.spineArch.amplitude * this.drowningIntensity;
+        const bodyStruggle = Math.sin(time * params.bodyStruggle.frequency) * params.bodyStruggle.amplitude * this.drowningIntensity;
+        this.setTargetRotation('mixamorigSpine', 'x', spineArch);
+        this.setTargetRotation('mixamorigSpine1', 'y', bodyStruggle * 0.5);
+        this.setTargetRotation('mixamorigSpine2', 'z', bodyStruggle * 0.3);
+
+        //leg kick
+        const legKick1 = Math.sin(time * params.legKick.frequency) * params.legKick.amplitude * this.drowningIntensity;
+        const legKick2 = Math.sin(time * params.legKick.frequency + Math.PI * 0.6) * params.legKick.amplitude * this.drowningIntensity;
+
+        this.setTargetRotation('mixamorigLeftUpLeg', 'x', legKick1 * 0.7);
+        this.setTargetRotation('mixamorigLeftUpLeg', 'y', legKick1 * 0.3);
+        this.setTargetRotation('mixamorigRightUpLeg', 'x', legKick2 * 0.7);
+        this.setTargetRotation('mixamorigRightUpLeg', 'y', -legKick2 * 0.3);
+
+        // Shoulder movement for more realistic struggle
+        const shoulderStuggle1 = Math.sin(time * params.armWave.frequency * 0.8) * 0.3 * this.drowningIntensity;
+        const shoulderStuggle2 = Math.sin(time * params.armWave.frequency * 0.8 + Math.PI * 0.4) * 0.3 * this.drowningIntensity;
+        
+        this.setTargetRotation('mixamorigLeftShoulder', 'x', shoulderStuggle1);
+        this.setTargetRotation('mixamorigLeftShoulder', 'z', shoulderStuggle1 * 0.5);
+        this.setTargetRotation('mixamorigRightShoulder', 'x', shoulderStuggle2);
+        this.setTargetRotation('mixamorigRightShoulder', 'z', -shoulderStuggle2 * 0.5);
+
+        // Hand grasping motion (trying to grab something) idk if this is gonna be visible, CHECK IF REMOVE
+        const handGrasp = Math.sin(time * params.hand.frequency) * 0.8 * this.drowningIntensity;
+
+        // Simulate finger movement by rotating hand bones  CHECK IF REMOVE, IDK IF IS VISIBLE
+        this.setTargetRotation('mixamorigLeftHand', 'x', handGrasp * 0.5);
+        this.setTargetRotation('mixamorigLeftHand', 'z', handGrasp);
+        this.setTargetRotation('mixamorigRightHand', 'x', -handGrasp * 0.5);
+        this.setTargetRotation('mixamorigRightHand', 'z', handGrasp);
+    }
+    isDrowningActive() {
+        return this.isDrowning;
+    }
+    getDrowningProgress() {
+        if (!this.isDrowning) return 0;
+        const drowningTime = this.animationTime - this.drowningStartTime;
+        return Math.min(drowningTime / 3.0, 1.0);   //max drowning time is 3 sec
     }
 
     setTargetRotation(boneName, axis, value) {
@@ -523,7 +672,11 @@ export class Pirate {
 
             if (bone && initial && target) {
                 //interpolation
-                const lerpFactor = this.isTransitioning ? Math.min(this.transitionTime / this.transitionDuration, 1.0) * 0.3 : 0.1;
+                let lerpFactor = this.isTransitioning ? Math.min(this.transitionTime / this.transitionDuration, 1.0) * 0.3 : 0.1;
+
+                if (this.animation === 'drown') {
+                    lerpFactor = 0.5; //faster if drowning
+                }
 
                 bone.rotation.x = THREE.MathUtils.lerp(
                     bone.rotation.x, 
@@ -552,54 +705,6 @@ export class Pirate {
         this.resetToNaturalPose();
         this.needsReset = false;
         this.targetRotations = {};
-    }
-
-    logObjectHierarchy(object, depth = 0) {
-        const indent = ' '.repeat(depth);
-        console.log(`${indent}Object: ${object.name || 'unnamed'} (Type: ${object.type})`);
-
-        if (object.isMesh) {
-        console.log(`${indent}  - Mesh with ${object.geometry.attributes.position.count} vertices`);
-        console.log(`${indent}  - Position: (${object.position.x.toFixed(2)}, ${object.position.y.toFixed(2)}, ${object.position.z.toFixed(2)})`);
-        console.log(`${indent}  - Scale: (${object.scale.x.toFixed(2)}, ${object.scale.y.toFixed(2)}, ${object.scale.z.toFixed(2)})`);
-        }
-    
-        if (object.children && object.children.length > 0) {
-            console.log(`${indent}  Children: ${object.children.length}`);
-            object.children.forEach(child => {
-                this.logObjectHierarchy(child, depth + 1);
-            });
-        }
-
-    }
-
-    getBodyParts() {    //list
-        return Object.keys(this.bodyParts);
-    }
-
-    getBodyPart(name) { //single part
-        return this.bodyParts[name];
-    }
-
-    setRotation(rotation) {
-        this.rotation = rotation;
-        if (this.mesh) {
-            this.mesh.rotation.y = rotation;
-        }
-    }
-
-        // Get distance to another object
-    distanceTo(targetPosition) {
-        if (this.mesh.position) {
-            return this.mesh.position.distanceTo(targetPosition);
-        }
-        return Infinity;
-    }
-
-    reset(){
-        this.mesh.position.set(this.startPosition.x, this.startPosition.y, this.startPosition.z);
-        this.mesh.rotation.set(0, this.INIT_ROTATION, 0);
-        this.rotation = this.INIT_ROTATION;
     }
 
 

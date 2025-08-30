@@ -239,12 +239,12 @@ body {
     opacity: 0.9;
 }
 
-/* Game Container (hidden initially) */
+/* Game Container */
 #gameContainer {
     width: 100vw;
     height: 100vh;
     position: relative;
-    display: none; /* Hidden until game starts */
+    display: none;
 }
 
 #gameContainer.active {
@@ -326,81 +326,6 @@ body {
     background: #5F9EA0;
     transform: translateY(-2px);
 }
-
-#gameContainer {
-    width: 100vw;
-    height: 100vh;
-    position: relative;
-}
-
-#ui {
-    position: absolute;
-    top: 20px;
-    left: 20px;
-    color: white;
-    z-index: 100;
-    font-size: 18px;
-    text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
-}
-
-#instructions {
-    position: absolute;
-    bottom: 20px;
-    left: 20px;
-    color: white;
-    z-index: 100;
-    font-size: 14px;
-    text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
-}
-
-.hidden {
-    display: none;
-}
-
-#gameOverScreen {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: rgba(0,0,0,0.8);
-    color: white;
-    padding: 40px;
-    border-radius: 10px;
-    text-align: center;
-    z-index: 200;
-    display: none;
-}
-
-#winScreen {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: rgba(0,100,0,0.8);
-    color: white;
-    padding: 40px;
-    border-radius: 10px;
-    text-align: center;
-    z-index: 200;
-    display: none;
-}
-
-.button {
-    padding: 10px 20px;
-    font-size: 16px;
-    background: #4682B4;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    margin-top: 20px;
-}
-
-.button:hover {
-    background: #5F9EA0;
-}
-
-
 
 /* Loading Screen Styles */
 #loadingScreen {
@@ -538,8 +463,6 @@ body {
     display: none; /* Initially hidden */
 }
 
-
-
 #controlModeNotification {
     position: fixed;
     top: 20px;
@@ -553,4 +476,22 @@ body {
     font-size: 14px;
     z-index: 1000;
     transition: opacity 0.3s ease;
+}
+
+/*drowning*/
+#drowningMessage {
+    position: fixed;
+    top: 10%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0, 102, 139, 0.258);
+    color: white;
+    padding: 20px;
+    border-radius: 10px;
+    font-size: 24px;
+    font-weight: bold;
+    text-align: center;
+    z-index: 1000;
+    border: 3px solid #0066cc;
+    box-shadow: 0 0 20px rgba(0, 0, 139, 0.7);
 }
